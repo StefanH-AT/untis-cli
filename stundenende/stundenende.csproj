@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="WebUntisSharp" Version="1.0.0.6" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="UntisLibrary.Api" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="UntisLibrary.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\publish\UntisLibrary.Api.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>
