@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Utility.CommandLine.Arguments" Version="4.0.0" />
       <PackageReference Include="WebUntisSharp" Version="1.0.0.6" />
     </ItemGroup>
 
