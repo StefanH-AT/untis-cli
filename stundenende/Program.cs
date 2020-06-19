@@ -51,7 +51,7 @@ namespace stundenende
                                     .FirstOrDefault(l => l.Period.Nr == currentPeriodIndex + 1);
                     
                     // Love this line!
-                    Console.Write( $"{currentPeriodIndex}: {(lesson == null ? "FREE" : lesson.SubjectsString)} in {difference.Duration().ToString(@"mm\:ss")}" );
+                    Console.Write( $"{currentPeriodIndex}: {(lesson == null ? "FREE" : lesson.SubjectsString)} in {difference.Duration().ToString(@"hh\:mm\:ss")}" );
 
                 }
                 
