@@ -1,7 +1,19 @@
-# Untis Lesson Countdown
-This is a program I made to show me when my lesson would end. Jep, that's all it does.
+# Untis CLI
+Little command tool to interact with WebUntis
 
 Uses [this](https://github.com/schletz/UntisLibrary) library to interface with WebUntis.
 
 ### Config
-This cli program takes the config path as the first parameter. Defaults to `./config.json` if no parameter is given.
+A config is needed for the login credentials. Default path is `./config.json`, but this can be changed through the `--config` argument. 
+
+```
+{
+  "user": " ", // Your username
+  "pass": " ", // Yes, this requires a password. There's no way to interface with api tokens..
+  "server": "", // The untis server you wish to connect to. (No https:// or paths, just raw cname). Example: neilo.webuntis.com 
+  "schoolName": "" // The school name. Should be the ?school= GET parameter in your webuntis url
+}
+```
+
+### Parameters
+The CLI parameters can be listed via `-h`
