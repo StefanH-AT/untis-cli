@@ -30,8 +30,6 @@ namespace UntisCli
         [Argument('n', "next-lesson", "Prints the upcoming lesson")]
         private static bool ArgNextLesson { get; set; }
         // Arguments
-        [Argument('t', "time", "Override the time for debugging purposes. Default: Now")]
-        private static string ArgTime { get; set; } // TODO: Implement time override
         [Argument('c', "config", "Set the config file path. Default: ./config.json")]
         private static string ArgConfigPath { get; set; }
         [Argument(' ', "class", "Set the class to fetch data from")]
@@ -72,7 +70,7 @@ namespace UntisCli
 
             if (ArgNextLesson)
             {
-                ShowNextLesson(ConnectUntis()); // TODO: Test if next lesson action works
+                ShowNextLesson(ConnectUntis());
             }
 
         }
@@ -86,7 +84,7 @@ namespace UntisCli
             foreach(ArgumentInfo info in Arguments.GetArgumentInfo(typeof(Program)))
             {   //                                               |
                 //                Very pretty code right here :) v
-                Console.WriteLine($"  {(info.ShortName == ' ' ? "" : "-" + info.ShortName), -5} | --{info.LongName, -14}| {info.HelpText,-60}");
+                Console.WriteLine($"  {(info.ShortName == ' ' ? "" : "-" + info.ShortName), -3} | --{info.LongName, -14}| {info.HelpText,-60}");
             }
             
         }
@@ -116,7 +114,7 @@ namespace UntisCli
 
         private static void ShowNextLesson(UntisClient untis)
         {
-            if (ArgClass?.Length == 0)
+            if (ArgClass == null)
             {
                 Console.Error.WriteLine("The class for the next lesson is not specified");
                 return;
@@ -125,7 +123,7 @@ namespace UntisCli
             SchoolClass untisClass = null;
             foreach(SchoolClass k in untis.Classes.Result)
             {
-                if (k.UniqueName == ArgClass) untisClass = k;
+                if (k.UniqueName.Equals(ArgClass, StringComparison.OrdinalIgnoreCase)) untisClass = k;
             }
             
             Period currentPeriod = GetCurrentPeriod(untis.Periods.Result);
