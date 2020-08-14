@@ -144,8 +144,9 @@ namespace UntisCli
         private static UntisClient ConnectUntis()
         {
             // Try to read config
-            string configText = File.ReadAllText(ArgConfigPath?.Length > 0 ? ArgConfigPath : DEFAULT_CONFIG_NAME);
-            if (configText.Length == 0)
+            string configPath = ArgConfigPath ?? DEFAULT_CONFIG_NAME;
+            string configText = File.ReadAllText(configPath);
+            if (configText == null)
             {
                 Console.Error.WriteLine("Failed to load config");
                 return null;
