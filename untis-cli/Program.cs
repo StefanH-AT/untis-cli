@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using UntisLibrary.Api;
 using UntisLibrary.Api.Entities;
@@ -15,8 +16,14 @@ namespace UntisCli
         // CONSTANTS
         // =========================================
 
-        private const string DEFAULT_CONFIG_NAME = "config.json";
+        private static string HOME_DIR = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
         
+        public static string CONFIG_DIR = HOME_DIR + "/.config/untis-cli/";
+        public static string CACHE_DIR = HOME_DIR + "/.cache/untis-cli/";
+
+        public static string CONFIG_FILE = CONFIG_DIR + "config.json";
+        public static string CACHE_FILE = CACHE_DIR + "cache.json";
+
         // =========================================
         // CLI PARAMS
         // =========================================
@@ -29,22 +36,35 @@ namespace UntisCli
         private static bool ArgRemaining { get; set; }
         [Argument('n', "next-lesson", "Prints the upcoming lesson")]
         private static bool ArgNextLesson { get; set; }
+        [Argument('f', "refresh-cache", "Refreshes the cache")]
+        private static bool ArgRefreshCache { get; set; }
+        [Argument('v', "verbose", "Verbose. Log more stuff")]
+        public static bool ArgVerbose { get; set; }
+
         // Arguments
-        [Argument('c', "config", "Set the config file path. Default: ./config.json")]
-        private static string ArgConfigPath { get; set; }
         [Argument(' ', "class", "Set the class to fetch data from")]
         private static string ArgClass { get; set; }
         
-        // =========================================
-        // GLOBAL VARS
-        // =========================================
-        
-        private static DateTime currentTime = DateTime.Now;
-
         static void Main(string[] args)
         {
             Arguments.Populate();
             
+            // Create cache and config dirs & files
+            Directory.CreateDirectory(CACHE_DIR);
+            Directory.CreateDirectory(CONFIG_DIR);
+            if (!File.Exists(CONFIG_FILE))
+            {
+                using (StreamWriter writer = File.CreateText(CONFIG_FILE))
+                {
+                    Config templateConfig = new Config();
+                    templateConfig.user = "Your username";
+                    templateConfig.pass = "Your password";
+                    templateConfig.server = "neilo.webuntis.com";
+                    templateConfig.schoolName = "Spengergasse";
+
+                    writer.Write(JsonConvert.SerializeObject(templateConfig, Formatting.Indented));
+                }
+            }
             // ========================================
             // Switch actions that don't require untis
             // ----------------------------------------
@@ -57,20 +77,37 @@ namespace UntisCli
             // =============================================
             // Switch actions that require untis connection
             // ---------------------------------------------
-
+            
+            // Read the cache
+            UntisCache cache;
+            
+            if (ArgRefreshCache)
+            {
+                UntisClient untisClient = UntisUtil.ConnectUntis(CONFIG_FILE);
+                cache = UntisCache.DownloadCache(untisClient);
+                untisClient.LogoutAsync();
+                LogVerbose("Refreshed the cache");
+                cache.WriteCache(CACHE_FILE);
+                LogVerbose("Wrote cache to disk");
+            }
+            else
+            {
+                cache = UntisCache.ReadCache(CACHE_FILE);
+            }
+            
             if (ArgRemaining)
             {
-                ShowRemainingLessonTime(ConnectUntis());
+                CliFrontend.ShowRemainingLessonTime(cache);
             }
             
             if (ArgListPeriods)
             {
-                ShowPeriodList(ConnectUntis());
+                CliFrontend.ShowPeriodList(cache);
             }
 
             if (ArgNextLesson)
             {
-                ShowNextLesson(ConnectUntis());
+                CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(CONFIG_FILE), ArgClass);
             }
 
         }
@@ -90,91 +127,13 @@ namespace UntisCli
         }
 
         
-
-        private static void ShowRemainingLessonTime(UntisClient untis)
-        {
-            Period currentPeriod = GetCurrentPeriod(untis.Periods.Result);
-            
-            TimeSpan lessonEnd = currentTime.TimeOfDay - currentPeriod.EndTime;
-            Console.WriteLine(lessonEnd.Duration().ToString(@"hh\:mm\:ss"));
-
-            untis.LogoutAsync();
- 
-        }
-
-        private static void ShowPeriodList(UntisClient untis)
-        {
-            foreach (var period in untis.Periods.Result)
-            {
-                Console.WriteLine($"{period.Nr, 02:d}: {period.StartTime} - {period.EndTime}");
-            }
-
-            untis.LogoutAsync();
-        }
-
-        private static void ShowNextLesson(UntisClient untis)
-        {
-            if (ArgClass == null)
-            {
-                Console.Error.WriteLine("The class for the next lesson is not specified");
-                return;
-            }
-            // Get my class
-            SchoolClass untisClass = null;
-            foreach(SchoolClass k in untis.Classes.Result)
-            {
-                if (k.UniqueName.Equals(ArgClass, StringComparison.OrdinalIgnoreCase)) untisClass = k;
-            }
-            
-            Period currentPeriod = GetCurrentPeriod(untis.Periods.Result);
-            
-            Lesson lesson = untis.GetLessons(untisClass).Result
-                .Where(l => l.Date.Date == DateTime.Today.Date)
-                .FirstOrDefault(l => l.Period.Nr == currentPeriod.Nr + 1);
-            
-            Console.WriteLine( lesson == null ? "FREE" : lesson.SubjectsString );
-
-        }
-        
         // ==============================
         //    UTILS
         // ==============================
-        
-        
-        private static UntisClient ConnectUntis()
+
+        public static void LogVerbose(string message)
         {
-            // Try to read config
-            string configPath = ArgConfigPath ?? DEFAULT_CONFIG_NAME;
-            string configText = File.ReadAllText(configPath);
-            if (configText == null)
-            {
-                Console.Error.WriteLine("Failed to load config");
-                return null;
-            }
-            // Try to parse config
-            Config config = JsonConvert.DeserializeObject<Config>(configText);
-            
-            // Try to connect to untis
-            UntisClient untisClient = new UntisClient(config.server, config.schoolName);
-            if (untisClient.TryLoginAsync(config.user, config.pass).Result) return untisClient;
-            
-            Console.Error.WriteLine("Failed to log into untis");
-            return null;
-
+            if(ArgVerbose) Console.WriteLine(message);
         }
-
-        private static Period GetCurrentPeriod(IEnumerable<Period> periods)
-        {
-            foreach (Period period in periods)
-            {
-                if (DateTime.Now.TimeOfDay < period.EndTime)
-                {
-                    return period;
-                }
-            }
-
-            return null;
-        }
-        
     }
 }
