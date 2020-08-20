@@ -1,23 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using Newtonsoft.Json;
-using UntisLibrary.Api;
-using UntisLibrary.Api.Entities;
 using Utility.CommandLine;
 
 namespace UntisCli
 {
-    class Program
+    internal class Program
     {
         // =========================================
         // CONSTANTS
         // =========================================
 
-        private static string HOME_DIR = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        
+        private static readonly string HOME_DIR = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
         public static string CONFIG_DIR = HOME_DIR + "/.config/untis-cli/";
         public static string CACHE_DIR = HOME_DIR + "/.cache/untis-cli/";
 
@@ -30,33 +25,36 @@ namespace UntisCli
         // Switches
         [Argument('p', "periods", "Lists all periods")]
         private static bool ArgListPeriods { get; set; }
-        [Argument('h', "help", "Shows help")]
-        private static bool ArgHelp { get; set; }
+
+        [Argument('h', "help", "Shows help")] private static bool ArgHelp { get; set; }
+
         [Argument('r', "remaining", "Prints lesson time remaining")]
         private static bool ArgRemaining { get; set; }
+
         [Argument('n', "next-lesson", "Prints the upcoming lesson")]
         private static bool ArgNextLesson { get; set; }
+
         [Argument('f', "refresh-cache", "Refreshes the cache")]
         private static bool ArgRefreshCache { get; set; }
+
         [Argument('v', "verbose", "Verbose. Log more stuff")]
         public static bool ArgVerbose { get; set; }
 
         // Arguments
         [Argument(' ', "class", "Set the class to fetch data from")]
         private static string ArgClass { get; set; }
-        
-        static void Main(string[] args)
+
+        private static void Main(string[] args)
         {
             Arguments.Populate();
-            
+
             // Create cache and config dirs & files
             Directory.CreateDirectory(CACHE_DIR);
             Directory.CreateDirectory(CONFIG_DIR);
             if (!File.Exists(CONFIG_FILE))
-            {
-                using (StreamWriter writer = File.CreateText(CONFIG_FILE))
+                using (var writer = File.CreateText(CONFIG_FILE))
                 {
-                    Config templateConfig = new Config();
+                    var templateConfig = new Config();
                     templateConfig.user = "Your username";
                     templateConfig.pass = "Your password";
                     templateConfig.server = "neilo.webuntis.com";
@@ -64,26 +62,22 @@ namespace UntisCli
 
                     writer.Write(JsonConvert.SerializeObject(templateConfig, Formatting.Indented));
                 }
-            }
             // ========================================
             // Switch actions that don't require untis
             // ----------------------------------------
-            
-            if (ArgHelp)
-            {
-                ShowHelp();
-            }
+
+            if (ArgHelp) ShowHelp();
 
             // =============================================
             // Switch actions that require untis connection
             // ---------------------------------------------
-            
+
             // Read the cache
             UntisCache cache;
-            
+
             if (ArgRefreshCache)
             {
-                UntisClient untisClient = UntisUtil.ConnectUntis(CONFIG_FILE);
+                var untisClient = UntisUtil.ConnectUntis(CONFIG_FILE);
                 cache = UntisCache.DownloadCache(untisClient);
                 untisClient.LogoutAsync();
                 LogVerbose("Refreshed the cache");
@@ -94,46 +88,34 @@ namespace UntisCli
             {
                 cache = UntisCache.ReadCache(CACHE_FILE);
             }
-            
-            if (ArgRemaining)
-            {
-                CliFrontend.ShowRemainingLessonTime(cache);
-            }
-            
-            if (ArgListPeriods)
-            {
-                CliFrontend.ShowPeriodList(cache);
-            }
 
-            if (ArgNextLesson)
-            {
-                CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(CONFIG_FILE), ArgClass);
-            }
+            if (ArgRemaining) CliFrontend.ShowRemainingLessonTime(cache);
 
+            if (ArgListPeriods) CliFrontend.ShowPeriodList(cache);
+
+            if (ArgNextLesson) CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(CONFIG_FILE), ArgClass);
         }
 
         private static void ShowHelp()
         {
-            
             Console.WriteLine("untis-cli. WebUntis cli tool");
             Console.WriteLine("============================");
-            
-            foreach(ArgumentInfo info in Arguments.GetArgumentInfo(typeof(Program)))
-            {   //                                               |
+
+            foreach (var info in Arguments.GetArgumentInfo(typeof(Program)))
+                //                                               |
                 //                Very pretty code right here :) v
-                Console.WriteLine($"  {(info.ShortName == ' ' ? "" : "-" + info.ShortName), -3} | --{info.LongName, -14}| {info.HelpText,-60}");
-            }
-            
+                Console.WriteLine(
+                    $"  {(info.ShortName == ' ' ? "" : "-" + info.ShortName),-3} | --{info.LongName,-14}| {info.HelpText,-60}");
         }
 
-        
+
         // ==============================
         //    UTILS
         // ==============================
 
         public static void LogVerbose(string message)
         {
-            if(ArgVerbose) Console.WriteLine(message);
+            if (ArgVerbose) Console.WriteLine(message);
         }
     }
 }

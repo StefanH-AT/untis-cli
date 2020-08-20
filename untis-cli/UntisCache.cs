@@ -9,35 +9,33 @@ namespace UntisCli
 {
     public class UntisCache
     {
-        
+        private UntisCache()
+        {
+        }
+
         public string SchoolName { get; set; }
-        public string ServerAddress { get; set;  }
-        public List<SchoolClass> Classes { get; set;  }
+        public string ServerAddress { get; set; }
+        public List<SchoolClass> Classes { get; set; }
         public List<Teacher> Teachers { get; set; }
         public List<Subject> Subjects { get; set; }
         public List<Room> Rooms { get; set; }
         public List<Period> Periods { get; set; }
 
-        private UntisCache()
-        {
-            
-        }
-
         public static UntisCache ReadCache(string cacheFile)
         {
             return JsonConvert.DeserializeObject<UntisCache>(File.ReadAllText(cacheFile));
         }
-        
+
         public static UntisCache DownloadCache(UntisClient untis)
         {
-            UntisCache untisCache = new UntisCache();
+            var untisCache = new UntisCache();
             untisCache.RefreshAll(untis);
             return untisCache;
         }
 
         public void WriteCache(string cacheFile)
         {
-            using (StreamWriter writer = File.CreateText(cacheFile))
+            using (var writer = File.CreateText(cacheFile))
             {
                 writer.Write(JsonConvert.SerializeObject(this));
             }
@@ -63,26 +61,25 @@ namespace UntisCli
         {
             Classes = untis.Classes.Result.ToList();
         }
-        
+
         public void RefreshTeachers(UntisClient untis)
         {
             Teachers = untis.Teachers.Result.ToList();
         }
-        
+
         public void RefreshSubjects(UntisClient untis)
         {
             Subjects = untis.Subjects.Result.ToList();
         }
-        
+
         public void RefreshRooms(UntisClient untis)
         {
             Rooms = untis.Rooms.Result.ToList();
         }
-        
+
         public void RefreshPeriods(UntisClient untis)
         {
             Periods = untis.Periods.Result.ToList();
         }
-        
     }
 }
