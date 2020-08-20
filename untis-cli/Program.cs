@@ -41,7 +41,7 @@ namespace UntisCli
         public static bool ArgVerbose { get; set; }
 
         // Arguments
-        [Argument(' ', "class", "Set the class to fetch data from")]
+        [Argument('c', "class", "Set the class to fetch data from")]
         private static string ArgClass { get; set; }
 
         private static void Main(string[] args)
@@ -87,6 +87,7 @@ namespace UntisCli
             else
             {
                 cache = UntisCache.ReadCache(CacheFile);
+                LogVerbose("Reading cache");
             }
 
             if (ArgRemaining) CliFrontend.ShowRemainingLessonTime(cache);
