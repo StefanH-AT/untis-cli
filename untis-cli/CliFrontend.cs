@@ -5,7 +5,7 @@ using UntisLibrary.Api.Entities;
 
 namespace UntisCli
 {
-    public class CliFrontend
+    public static class CliFrontend
     {
         public static void ShowRemainingLessonTime(UntisCache cache)
         {

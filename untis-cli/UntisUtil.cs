@@ -7,7 +7,7 @@ using UntisLibrary.Api.Entities;
 
 namespace UntisCli
 {
-    internal class UntisUtil
+    static class UntisUtil
     {
         public static Period GetCurrentPeriod(IEnumerable<Period> periods)
         {

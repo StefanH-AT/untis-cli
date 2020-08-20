@@ -11,13 +11,13 @@ namespace UntisCli
         // CONSTANTS
         // =========================================
 
-        private static readonly string HOME_DIR = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        private static readonly string HomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        public static string CONFIG_DIR = HOME_DIR + "/.config/untis-cli/";
-        public static string CACHE_DIR = HOME_DIR + "/.cache/untis-cli/";
+        private static readonly string ConfigDir = HomeDir + "/.config/untis-cli/";
+        private static readonly string CacheDir = HomeDir + "/.cache/untis-cli/";
 
-        public static string CONFIG_FILE = CONFIG_DIR + "config.json";
-        public static string CACHE_FILE = CACHE_DIR + "cache.json";
+        private static readonly string ConfigFile = ConfigDir + "config.json";
+        private static readonly string CacheFile = CacheDir + "cache.json";
 
         // =========================================
         // CLI PARAMS
@@ -49,10 +49,10 @@ namespace UntisCli
             Arguments.Populate();
 
             // Create cache and config dirs & files
-            Directory.CreateDirectory(CACHE_DIR);
-            Directory.CreateDirectory(CONFIG_DIR);
-            if (!File.Exists(CONFIG_FILE))
-                using (var writer = File.CreateText(CONFIG_FILE))
+            Directory.CreateDirectory(CacheDir);
+            Directory.CreateDirectory(ConfigDir);
+            if (!File.Exists(ConfigFile))
+                using (var writer = File.CreateText(ConfigFile))
                 {
                     var templateConfig = new Config();
                     templateConfig.user = "Your username";
@@ -77,23 +77,23 @@ namespace UntisCli
 
             if (ArgRefreshCache)
             {
-                var untisClient = UntisUtil.ConnectUntis(CONFIG_FILE);
+                var untisClient = UntisUtil.ConnectUntis(ConfigFile);
                 cache = UntisCache.DownloadCache(untisClient);
                 untisClient.LogoutAsync();
                 LogVerbose("Refreshed the cache");
-                cache.WriteCache(CACHE_FILE);
+                cache.WriteCache(CacheFile);
                 LogVerbose("Wrote cache to disk");
             }
             else
             {
-                cache = UntisCache.ReadCache(CACHE_FILE);
+                cache = UntisCache.ReadCache(CacheFile);
             }
 
             if (ArgRemaining) CliFrontend.ShowRemainingLessonTime(cache);
 
             if (ArgListPeriods) CliFrontend.ShowPeriodList(cache);
 
-            if (ArgNextLesson) CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(CONFIG_FILE), ArgClass);
+            if (ArgNextLesson) CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(ConfigFile), ArgClass);
         }
 
         private static void ShowHelp()
