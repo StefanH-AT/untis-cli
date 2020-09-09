@@ -40,6 +40,9 @@ namespace UntisCli
         [Argument('v', "verbose", "Verbose. Log more stuff")]
         public static bool ArgVerbose { get; set; }
 
+        [Argument('t', "table", "Prints the timetable for that class. Requires --class!")]
+        public static bool ArgTable { get; set; }
+
         // Arguments
         [Argument('c', "class", "Set the class to fetch data from")]
         private static string ArgClass { get; set; }
@@ -59,6 +62,7 @@ namespace UntisCli
                     templateConfig.pass = "Your password";
                     templateConfig.server = "neilo.webuntis.com";
                     templateConfig.schoolName = "Spengergasse";
+                    templateConfig.dayOfWeekLabels = new[] {"Mon", "Die", "Mit", "Don", "Fre"};
 
                     writer.Write(JsonConvert.SerializeObject(templateConfig, Formatting.Indented));
                 }
@@ -72,12 +76,23 @@ namespace UntisCli
             // Switch actions that require untis connection
             // ---------------------------------------------
 
+            // Try to read config
+            var configText = File.ReadAllText(ConfigFile);
+            if (configText == null)
+            {
+                Console.Error.WriteLine("Failed to load config");
+                return;
+            }
+
+            // Try to parse config
+            var config = JsonConvert.DeserializeObject<Config>(configText);
+
             // Read the cache
             UntisCache cache;
 
             if (ArgRefreshCache)
             {
-                var untisClient = UntisUtil.ConnectUntis(ConfigFile);
+                var untisClient = UntisUtil.ConnectUntis(config);
                 cache = UntisCache.DownloadCache(untisClient);
                 untisClient.LogoutAsync();
                 LogVerbose("Refreshed the cache");
@@ -94,8 +109,13 @@ namespace UntisCli
 
             if (ArgListPeriods) CliFrontend.ShowPeriodList(cache);
 
-            if (ArgNextLesson) CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(ConfigFile), ArgClass);
+            if (ArgNextLesson) CliFrontend.ShowNextLesson(cache, UntisUtil.ConnectUntis(config), ArgClass);
+
+            if (ArgTable)
+                CliFrontend.ShowTimeTable(cache, UntisUtil.ConnectUntis(config), ArgClass, config.dayOfWeekLabels);
         }
+
+        // ======================================================
 
         private static void ShowHelp()
         {

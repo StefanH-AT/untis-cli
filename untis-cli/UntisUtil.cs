@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
 using UntisLibrary.Api;
 using UntisLibrary.Api.Entities;
 
 namespace UntisCli
 {
-    static class UntisUtil
+    internal static class UntisUtil
     {
         public static Period GetCurrentPeriod(IEnumerable<Period> periods)
         {
@@ -18,19 +16,14 @@ namespace UntisCli
             return null;
         }
 
-        public static UntisClient ConnectUntis(string configPath)
+        public static SchoolClass GetSchoolClass(List<SchoolClass> classes, string className)
+        {
+            return classes.Find(c => c.UniqueName.Equals(className, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static UntisClient ConnectUntis(Config config)
         {
             Program.LogVerbose("Opening Untis Connection");
-            // Try to read config
-            var configText = File.ReadAllText(configPath);
-            if (configText == null)
-            {
-                Console.Error.WriteLine("Failed to load config");
-                return null;
-            }
-
-            // Try to parse config
-            var config = JsonConvert.DeserializeObject<Config>(configText);
 
             // Try to connect to untis
             var untisClient = new UntisClient(config.server, config.schoolName);

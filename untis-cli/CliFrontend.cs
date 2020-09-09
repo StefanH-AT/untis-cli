@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using UntisLibrary.Api;
-using UntisLibrary.Api.Entities;
 
 namespace UntisCli
 {
@@ -21,7 +20,7 @@ namespace UntisCli
                 Console.WriteLine($"{period.Nr,02:d}: {period.StartTime} - {period.EndTime}");
         }
 
-        public static void ShowNextLesson(UntisCache untis, UntisClient untisClient, string className)
+        public static void ShowNextLesson(UntisCache cache, UntisClient untisClient, string className)
         {
             if (className == null)
             {
@@ -30,12 +29,9 @@ namespace UntisCli
             }
 
             // Get my class
-            SchoolClass untisClass = null;
-            foreach (var k in untis.Classes)
-                if (k.UniqueName.Equals(className, StringComparison.OrdinalIgnoreCase))
-                    untisClass = k;
+            var untisClass = UntisUtil.GetSchoolClass(cache.Classes, className);
 
-            var currentPeriod = UntisUtil.GetCurrentPeriod(untis.Periods);
+            var currentPeriod = UntisUtil.GetCurrentPeriod(cache.Periods);
 
             var lesson = untisClient.GetLessons(untisClass).Result
                 .Where(l => l.Date.Date == DateTime.Today.Date)
@@ -44,6 +40,42 @@ namespace UntisCli
             Console.WriteLine(lesson == null ? "FREE" : lesson.SubjectsString);
 
             untisClient.LogoutAsync();
+        }
+
+        public static void ShowTimeTable(UntisCache cache, UntisClient untisClient, string className,
+            string[] daysOfWeek)
+        {
+            if (className == null)
+            {
+                Console.Error.WriteLine("The class for the next lesson is not specified");
+                return;
+            }
+
+            const int sidebarColumnWidth = 16;
+            const int mainColumnWidth = 10;
+
+            var untisClass = UntisUtil.GetSchoolClass(cache.Classes, className);
+            var lessons = untisClient.GetLessons(untisClass).Result.ToList();
+
+            // Print table head
+            Console.Write($" {untisClass.UniqueName,-sidebarColumnWidth}|");
+            for (var d = 0; d < 5; d++) // Loop through days of the week (columns)
+                Console.Write($" {daysOfWeek[d],-mainColumnWidth}|");
+            //Console.Write(lessons.Count);
+
+            Console.WriteLine();
+
+            // Print table body
+            foreach (var period in cache.Periods) // Loop through periods (Rows)
+            {
+                Console.Write(
+                    $"{period.Nr,02} {period.StartTime.Duration():hh\\:mm} - {period.StartTime.Duration():hh\\:mm} | ");
+                foreach (var lesson in lessons.Where(l => l.Period.Nr == period.Nr))
+                    // TODO: Complete timetable printout. Can't test until untis is fixed
+                    Console.Write($" {lesson.Subject.DisplayName,-mainColumnWidth}|");
+
+                Console.WriteLine();
+            }
         }
     }
 }
